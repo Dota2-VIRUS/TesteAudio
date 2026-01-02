@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Lame;
-using NAudio.CoreAudioApi.Interfaces;
 
 
 namespace GravadorAudioSaidaWin
@@ -52,6 +51,13 @@ namespace GravadorAudioSaidaWin
             ReRegistrarHotkeys();
         }
 
+        private string GerarNomeArquivo(string prefixo)
+        {
+            string dataHora = DateTime.Now.ToString("ddMMyyyyHHmmss");
+            return $"{prefixo}_{dataHora}.mp3";
+
+        }
+
         private void ParseHotkeyString(string s, out Keys key, out uint modifier)
         {
             key = Keys.None;
@@ -92,13 +98,16 @@ namespace GravadorAudioSaidaWin
         {
             var enumerator = new MMDeviceEnumerator();
             var defaultDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            IniciarGravacao(defaultDevice, "teste_audio_padrao.mp3");
-            lblStatus.Text = "Gravando áudio padrão (teste)...";
+            string arquivo = GerarNomeArquivo("Dota 2 VIRUS teste");
+            IniciarGravacao(defaultDevice, arquivo);
+            lblStatus.Text = $"Gravando (teste): {arquivo}";
+            
         }
+
+       
 
         private void btnSelecionarExe_Click(object sender, EventArgs e)
         {
-            // Pega todos os processos do sistema
             Process[] processos = Process.GetProcesses();
             List<string> nomesApps = new List<string>();
 
@@ -108,67 +117,113 @@ namespace GravadorAudioSaidaWin
                 {
                     string nomeApp = processo.ProcessName;
                     string caminhoExe = "";
-                    
+
                     try
                     {
                         caminhoExe = processo.MainModule?.FileName ?? "";
                     }
-                    catch
-                    {
-                        // Alguns processos do sistema não permitem acesso a MainModule
-                    }
+                    catch { }
 
-                    // Filtra duplicados, processos sem caminho e processos do Windows
                     if (!string.IsNullOrWhiteSpace(nomeApp) &&
                         !nomesApps.Contains(nomeApp) &&
                         !string.IsNullOrWhiteSpace(caminhoExe) &&
-                        !caminhoExe.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase) &&
-                        !caminhoExe.Contains("WindowsApps")) // Ignora apps internos do Windows
+                        !caminhoExe.StartsWith(
+                            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                            StringComparison.OrdinalIgnoreCase) &&
+                        !caminhoExe.Contains("WindowsApps"))
                     {
                         nomesApps.Add(nomeApp);
                     }
                 }
-                catch
-                {
-                    // Ignora processos que não podem ser acessados
-                }
+                catch { }
             }
 
             nomesApps.Sort();
 
-            // Cria o form de seleção
+            // ===== FORM ESTILIZADO =====
             using (Form selecionarForm = new Form())
             {
-                selecionarForm.Text = "Selecione o app em execução";
+                selecionarForm.Text = "Selecionar Aplicativo";
+                selecionarForm.FormBorderStyle = FormBorderStyle.FixedSingle;
                 selecionarForm.StartPosition = FormStartPosition.CenterParent;
-                selecionarForm.ClientSize = new System.Drawing.Size(300, 400);
+                selecionarForm.ClientSize = new Size(360, 450);
+                selecionarForm.MaximizeBox = false;
+                selecionarForm.BackColor = Color.FromArgb(240, 240, 240);
+                selecionarForm.Font = new Font("Segoe UI", 9F);
 
-                ListBox lst = new ListBox();
-                lst.Dock = DockStyle.Fill;
-                lst.DataSource = nomesApps;
-
-                Button btnOk = new Button();
-                btnOk.Text = "OK";
-                btnOk.Dock = DockStyle.Bottom;
-                btnOk.Height = 30;
-                btnOk.Click += (s2, e2) =>
+                // Header
+                Panel header = new Panel
                 {
+                    Dock = DockStyle.Top,
+                    Height = 55,
+                    BackColor = Color.FromArgb(0, 120, 215)
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = "📁 Aplicativos em execução",
+                    ForeColor = Color.White,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                    AutoSize = true,
+                    Location = new Point(15, 15)
+                };
+
+                header.Controls.Add(lblTitulo);
+
+                // Lista
+                ListBox lst = new ListBox
+                {
+                    DataSource = nomesApps,
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Segoe UI", 9.5F),
+                    BorderStyle = BorderStyle.None
+                };
+
+                Panel panelLista = new Panel
+                {
+                    Dock = DockStyle.Fill,
+                    Padding = new Padding(10),
+                    BackColor = Color.White
+                };
+
+                panelLista.Controls.Add(lst);
+
+                // Botão OK
+                Button btnOk = new Button
+                {
+                    Text = "Selecionar",
+                    Dock = DockStyle.Bottom,
+                    Height = 45,
+                    BackColor = Color.FromArgb(0, 120, 215),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                    Cursor = Cursors.Hand
+                };
+                btnOk.FlatAppearance.BorderSize = 0;
+
+                btnOk.Click += (s, e2) =>
+                {
+                    if (lst.SelectedItem == null) return;
+
                     selecionarForm.DialogResult = DialogResult.OK;
                     selecionarForm.Close();
                 };
 
-                selecionarForm.Controls.Add(lst);
+                // Duplo clique seleciona
+                lst.DoubleClick += (s, e2) => btnOk.PerformClick();
+
+                selecionarForm.Controls.Add(panelLista);
                 selecionarForm.Controls.Add(btnOk);
+                selecionarForm.Controls.Add(header);
 
                 if (selecionarForm.ShowDialog() == DialogResult.OK)
                 {
-                    exeSelecionado = lst.SelectedItem!.ToString();  
+                    exeSelecionado = lst.SelectedItem!.ToString();
                     txtExecutavel.Text = exeSelecionado;
                 }
             }
         }
-
-
 
         private void btnIniciar_Click(object sender, EventArgs e)
         {
@@ -184,8 +239,10 @@ namespace GravadorAudioSaidaWin
 
             if (cmbDispositivos.SelectedIndex < 0 || dispositivos == null) return;
             var device = dispositivos[cmbDispositivos.SelectedIndex];
-            IniciarGravacao(device, "gravacao_saida.mp3");
-            lblStatus.Text = "Gravando...";
+            string arquivo = GerarNomeArquivo("dota2virus");
+            IniciarGravacao(device, arquivo);
+            lblStatus.Text = $"Gravando: {arquivo}";
+
         }
 
         private void btnParar_Click(object sender, EventArgs e) => PararGravacao();
@@ -216,6 +273,7 @@ namespace GravadorAudioSaidaWin
             capture.StartRecording();
             btnIniciar.Enabled = false;
             btnParar.Enabled = true;
+            btnTeste.Enabled = false;
         }
 
         private void PararGravacao()
@@ -225,6 +283,7 @@ namespace GravadorAudioSaidaWin
             prgVolume.Value = 0;
             btnIniciar.Enabled = true;
             btnParar.Enabled = false;
+            btnTeste.Enabled = true;
         }
 
         private void AtualizarVuMeter(byte[] buffer, int bytes)
