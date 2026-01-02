@@ -7,7 +7,7 @@ using NAudio.Lame;
 
 namespace GravadorAudioSaidaWin
 {
-    public partial class Form1 : Form
+    public partial class Menu : Form
     {
         private WasapiLoopbackCapture? capture;
         private LameMP3FileWriter? mp3Writer;
@@ -27,7 +27,7 @@ namespace GravadorAudioSaidaWin
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        public Form1()
+        public Menu()
         {
             InitializeComponent();
             CarregarDispositivos();

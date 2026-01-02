@@ -1,6 +1,6 @@
 ﻿namespace GravadorAudioSaidaWin
 {
-    partial class Form1
+    partial class Menu
     {
         private System.ComponentModel.IContainer components = null;
 
