@@ -18,6 +18,7 @@ namespace GravadorAudioSaidaWin
             CarregarDispositivos();
         }
 
+        // Carrega dispositivos de saída ativos
         private void CarregarDispositivos()
         {
             var enumerator = new MMDeviceEnumerator();
@@ -35,25 +36,45 @@ namespace GravadorAudioSaidaWin
                 cmbDispositivos.SelectedIndex = 0;
         }
 
+        // Botão atualizar lista
         private void btnAtualizar_Click(object sender, EventArgs e)
         {
             CarregarDispositivos();
         }
 
+        // Botão iniciar gravação do dispositivo selecionado
         private void btnIniciar_Click(object sender, EventArgs e)
         {
             if (cmbDispositivos.SelectedIndex < 0 || dispositivos == null)
                 return;
 
             var device = dispositivos[cmbDispositivos.SelectedIndex];
+            IniciarGravacao(device, "gravacao_saida.mp3");
+            lblStatus.Text = "Gravando (MP3)...";
+        }
+
+        // Botão parar gravação
+        private void btnParar_Click(object sender, EventArgs e)
+        {
+            PararGravacao();
+        }
+
+        // Botão testar áudio padrão
+        private void btnTeste_Click(object sender, EventArgs e)
+        {
+            var enumerator = new MMDeviceEnumerator();
+            var defaultDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            IniciarGravacao(defaultDevice, "teste_audio_padrao.mp3");
+            lblStatus.Text = "Gravando áudio padrão (teste)...";
+        }
+
+        // Método que inicia gravação
+        private void IniciarGravacao(MMDevice device, string arquivo)
+        {
+            PararGravacao();
 
             capture = new WasapiLoopbackCapture(device);
-
-            mp3Writer = new LameMP3FileWriter(
-                "gravacao_saida.mp3",
-                capture.WaveFormat,
-                192
-            );
+            mp3Writer = new LameMP3FileWriter(arquivo, capture.WaveFormat, 192);
 
             capture.DataAvailable += (s, a) =>
             {
@@ -61,32 +82,52 @@ namespace GravadorAudioSaidaWin
                 AtualizarVuMeter(a.Buffer, a.BytesRecorded);
             };
 
-            capture.StartRecording();
+            capture.RecordingStopped += (s, a) =>
+            {
+                mp3Writer?.Dispose();
+                capture?.Dispose();
+                BeginInvoke(new Action(() =>
+                {
+                    lblStatus.Text = "Gravação finalizada";
+                    btnIniciar.Enabled = true;
+                    btnParar.Enabled = false;
+                }));
+            };
 
-            lblStatus.Text = "Gravando (MP3)...";
+            capture.StartRecording();
             btnIniciar.Enabled = false;
             btnParar.Enabled = true;
         }
 
-        private void btnParar_Click(object sender, EventArgs e)
+        // Para a gravação
+        private void PararGravacao()
         {
-            capture?.StopRecording();
-            capture?.Dispose();
-            mp3Writer?.Dispose();
+            if (capture != null)
+            {
+                capture.StopRecording();
+                capture.Dispose();
+                capture = null;
+            }
+
+            if (mp3Writer != null)
+            {
+                mp3Writer.Dispose();
+                mp3Writer = null;
+            }
 
             prgVolume.Value = 0;
-
-            lblStatus.Text = "Gravação finalizada";
             btnIniciar.Enabled = true;
             btnParar.Enabled = false;
         }
 
+        // Atualiza o VU Meter
         private void AtualizarVuMeter(byte[] buffer, int bytes)
         {
             float max = 0;
 
             for (int i = 0; i < bytes; i += 4)
             {
+                if (i + 3 >= buffer.Length) break;
                 float sample = BitConverter.ToSingle(buffer, i);
                 max = Math.Max(max, Math.Abs(sample));
             }

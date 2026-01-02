@@ -3,10 +3,12 @@
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
+
         private System.Windows.Forms.ComboBox cmbDispositivos;
         private System.Windows.Forms.Button btnIniciar;
         private System.Windows.Forms.Button btnParar;
         private System.Windows.Forms.Button btnAtualizar;
+        private System.Windows.Forms.Button btnTeste;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.ProgressBar prgVolume;
 
@@ -27,6 +29,7 @@
             this.btnIniciar = new System.Windows.Forms.Button();
             this.btnParar = new System.Windows.Forms.Button();
             this.btnAtualizar = new System.Windows.Forms.Button();
+            this.btnTeste = new System.Windows.Forms.Button();
             this.lblStatus = new System.Windows.Forms.Label();
             this.prgVolume = new System.Windows.Forms.ProgressBar();
             this.SuspendLayout();
@@ -88,11 +91,22 @@
             this.lblStatus.TabIndex = 5;
             this.lblStatus.Text = "Aguardando";
             // 
+            // btnTeste
+            // 
+            this.btnTeste.Location = new System.Drawing.Point(12, 145);
+            this.btnTeste.Name = "btnTeste";
+            this.btnTeste.Size = new System.Drawing.Size(360, 30);
+            this.btnTeste.TabIndex = 6;
+            this.btnTeste.Text = "Testar áudio padrão";
+            this.btnTeste.UseVisualStyleBackColor = true;
+            this.btnTeste.Click += new System.EventHandler(this.btnTeste_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(384, 145);
+            this.ClientSize = new System.Drawing.Size(384, 200);
+            this.Controls.Add(this.btnTeste);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.prgVolume);
             this.Controls.Add(this.btnAtualizar);
