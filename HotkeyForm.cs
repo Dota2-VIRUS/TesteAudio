@@ -42,7 +42,7 @@ namespace GravadorAudioSaidaWin
             this.KeyUp += HotkeyForm_KeyUp;
         }
 
-        private void HotkeyForm_KeyDown(object sender, KeyEventArgs e)
+        private void HotkeyForm_KeyDown(object? sender, KeyEventArgs e)
         {
             // Atualiza modificadores
             Shift = e.Shift;
@@ -57,12 +57,12 @@ namespace GravadorAudioSaidaWin
             }
         }
 
-        private void HotkeyForm_KeyUp(object sender, KeyEventArgs e)
+        private void HotkeyForm_KeyUp(object? sender, KeyEventArgs e)
         {
             // Apenas para manter o lbl atualizado se liberar alguma tecla
         }
 
-        private void BtnConfirmar_Click(object sender, EventArgs e)
+        private void BtnConfirmar_Click(object? sender, EventArgs e)
         {
             TeclaSelecionada = teclaAtual;
             this.DialogResult = DialogResult.OK;

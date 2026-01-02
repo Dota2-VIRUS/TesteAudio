@@ -97,62 +97,77 @@ namespace GravadorAudioSaidaWin
         }
 
         private void btnSelecionarExe_Click(object sender, EventArgs e)
-{
-    // Pega todos os processos do sistema
-    Process[] processos = Process.GetProcesses();
-    List<string> nomesApps = new List<string>();
-
-    foreach (var processo in processos)
-    {
-        try
         {
-            string nomeApp = processo.ProcessName;
+            // Pega todos os processos do sistema
+            Process[] processos = Process.GetProcesses();
+            List<string> nomesApps = new List<string>();
 
-            // Ignora duplicados e processos do sistema
-            if (!string.IsNullOrWhiteSpace(nomeApp) && !nomesApps.Contains(nomeApp))
+            foreach (var processo in processos)
             {
-                nomesApps.Add(nomeApp);
+                try
+                {
+                    string nomeApp = processo.ProcessName;
+                    string caminhoExe = "";
+                    
+                    try
+                    {
+                        caminhoExe = processo.MainModule?.FileName ?? "";
+                    }
+                    catch
+                    {
+                        // Alguns processos do sistema não permitem acesso a MainModule
+                    }
+
+                    // Filtra duplicados, processos sem caminho e processos do Windows
+                    if (!string.IsNullOrWhiteSpace(nomeApp) &&
+                        !nomesApps.Contains(nomeApp) &&
+                        !string.IsNullOrWhiteSpace(caminhoExe) &&
+                        !caminhoExe.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase) &&
+                        !caminhoExe.Contains("WindowsApps")) // Ignora apps internos do Windows
+                    {
+                        nomesApps.Add(nomeApp);
+                    }
+                }
+                catch
+                {
+                    // Ignora processos que não podem ser acessados
+                }
+            }
+
+            nomesApps.Sort();
+
+            // Cria o form de seleção
+            using (Form selecionarForm = new Form())
+            {
+                selecionarForm.Text = "Selecione o app em execução";
+                selecionarForm.StartPosition = FormStartPosition.CenterParent;
+                selecionarForm.ClientSize = new System.Drawing.Size(300, 400);
+
+                ListBox lst = new ListBox();
+                lst.Dock = DockStyle.Fill;
+                lst.DataSource = nomesApps;
+
+                Button btnOk = new Button();
+                btnOk.Text = "OK";
+                btnOk.Dock = DockStyle.Bottom;
+                btnOk.Height = 30;
+                btnOk.Click += (s2, e2) =>
+                {
+                    selecionarForm.DialogResult = DialogResult.OK;
+                    selecionarForm.Close();
+                };
+
+                selecionarForm.Controls.Add(lst);
+                selecionarForm.Controls.Add(btnOk);
+
+                if (selecionarForm.ShowDialog() == DialogResult.OK)
+                {
+                    exeSelecionado = lst.SelectedItem!.ToString();  
+                    txtExecutavel.Text = exeSelecionado;
+                }
             }
         }
-        catch
-        {
-            // Ignora processos que não podem ser acessados
-        }
-    }
 
-    nomesApps.Sort();
-
-    // Cria o form de seleção
-    using (Form selecionarForm = new Form())
-    {
-        selecionarForm.Text = "Selecione o app em execução";
-        selecionarForm.StartPosition = FormStartPosition.CenterParent;
-        selecionarForm.ClientSize = new System.Drawing.Size(300, 400);
-
-        ListBox lst = new ListBox();
-        lst.Dock = DockStyle.Fill;
-        lst.DataSource = nomesApps;
-
-        Button btnOk = new Button();
-        btnOk.Text = "OK";
-        btnOk.Dock = DockStyle.Bottom;
-        btnOk.Height = 30;
-        btnOk.Click += (s2, e2) =>
-        {
-            selecionarForm.DialogResult = DialogResult.OK;
-            selecionarForm.Close();
-        };
-
-        selecionarForm.Controls.Add(lst);
-        selecionarForm.Controls.Add(btnOk);
-
-        if (selecionarForm.ShowDialog() == DialogResult.OK)
-        {
-            exeSelecionado = lst.SelectedItem.ToString();
-            txtExecutavel.Text = exeSelecionado;
-        }
-    }
-}
 
 
         private void btnIniciar_Click(object sender, EventArgs e)
